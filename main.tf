@@ -1,11 +1,3 @@
-resource "aws_ecr_repository" "worker" {
-    name  = "nginx"
-}
-
-resource "aws_ecs_cluster" "ecs_cluster" {
-    name  = "my-cluster"
-}
-
 resource "aws_ecs_task_definition" "task_definition" {
   family                   = "nginx"
   requires_compatibilities = ["EC2"]
@@ -19,16 +11,17 @@ resource "aws_ecs_task_definition" "task_definition" {
           "hostPort"      : 80
         }
       ],
-      "memory"         : 256,  # Specify the memory in MiB
-      "memoryReservation": 128 
+      "memory"         : 512,  # Specify the memory in MiB
+      "memoryReservation": 256 
     }
     // You can define additional containers here if needed
   ])
 }
 
-resource "aws_ecs_service" "worker" {
+resource "aws_ecs_service" "nginx" {
   name            = "nginx"
   cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.task_definition.arn
-  desired_count   = 2
+  desired_count   = 1
+  
 }

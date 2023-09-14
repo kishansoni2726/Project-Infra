@@ -1,19 +1,20 @@
 resource "aws_vpc" "main" {
- cidr_block = "10.0.0.0/16"
- 
+  cidr_block = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support = true
  tags = {
    Name = "Project VPC"
  }
 }
 resource "aws_subnet" "public_subnets" {
- count             = length(var.public_subnet_cidrs)
- vpc_id            = aws_vpc.main.id
- cidr_block        = element(var.public_subnet_cidrs, count.index)
- availability_zone = element(var.azs, count.index)
- 
- tags = {
-   Name = "Public-Subnet-${count.index + 1}"
- }
+  count             = length(var.public_subnet_cidrs)
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = element(var.public_subnet_cidrs, count.index)
+  availability_zone = element(var.azs, count.index)
+  map_public_ip_on_launch = true
+  tags = {
+    Name = "Public-Subnet-${count.index+1}"
+  }
 }
  
 resource "aws_subnet" "private_subnets" {
@@ -31,7 +32,7 @@ resource "aws_internet_gateway" "gw" {
  vpc_id = aws_vpc.main.id
  
  tags = {
-   Name = "Project VPC IG"
+   Name = "Project-VPC-IG"
  }
 }
 
@@ -48,7 +49,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = element(aws_subnet.public_subnets.*.id, 0)
 
   tags = {
-    Name        = "nat"
+    Name        = "NAT"
   }
 }
 
@@ -61,7 +62,7 @@ resource "aws_route_table" "public_rt" {
  }
  
  tags = {
-   Name = "1st Route Table"
+   Name = "Public-Route-Table"
  }
 }
 
@@ -74,7 +75,7 @@ route {
  }
  
  tags = {
-   Name = "2nd Route Table"
+   Name = "Private-Route-Table"
  }
 }
 resource "aws_route_table_association" "public_subnet_asso" {

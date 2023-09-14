@@ -1,13 +1,22 @@
+resource "aws_ecr_repository" "nginx" {
+    name  = "nginx"
+}
+
+resource "aws_ecs_cluster" "ecs_cluster" {
+    name  = "my-cluster"
+}
+
 resource "aws_launch_configuration" "ecs_launch_config" {
-    image_id             = "ami-0f5ee92e2d63afc18" # Ubuntu
+    image_id             = "ami-054c337ee5048c313" # Amazon Linux
     iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
     security_groups      = [aws_security_group.ecs_sg.id]
-    user_data            = "#!/bin/bash\necho ECS_CLUSTER=my-cluster >> /etc/ecs/ecs.config"
+    user_data            = "#!/bin/bash \n echo ECS_CLUSTER=my-cluster >> /etc/ecs/ecs.config"
     instance_type        = "t2.micro"
+
     
 }
 
-resource "aws_autoscaling_group" "failure_analysis_ecs_asg" {
+resource "aws_autoscaling_group" "ecs_asg" {
     name                      = "asg"
     vpc_zone_identifier       = [ for subnet in aws_subnet.public_subnets[*] : subnet.id ]
     launch_configuration      = aws_launch_configuration.ecs_launch_config.name
@@ -36,7 +45,7 @@ resource "aws_lb_target_group" "lb_target_group" {
 }
 
 resource "aws_autoscaling_attachment" "asg_to_target_group" {
-  autoscaling_group_name = aws_autoscaling_group.failure_analysis_ecs_asg.name
+  autoscaling_group_name = aws_autoscaling_group.ecs_asg.name
   lb_target_group_arn  = aws_lb_target_group.lb_target_group.arn
 }
 
@@ -50,3 +59,78 @@ resource "aws_lb_listener" "alb_listener" {
     target_group_arn = aws_lb_target_group.lb_target_group.arn
   }
 }
+
+#scale up policy
+resource "aws_autoscaling_policy" "scale_up" {
+  name                   = "asg-scale-up"
+  autoscaling_group_name = aws_autoscaling_group.ecs_asg.name
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = "1" #increasing instance by 1 
+  cooldown               = "300"
+  policy_type            = "SimpleScaling"
+}
+
+# scale up alarm
+# alarm will trigger the ASG policy (scale/down) based on the metric (CPUUtilization), comparison_operator, threshold
+resource "aws_cloudwatch_metric_alarm" "scale_up_alarm" {
+  alarm_name          = "asg-scale-up-alarm"
+  alarm_description   = "asg-scale-up-cpu-alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "5"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "60" # New instance will be created once CPU utilization is higher than 30 %
+  dimensions = {
+    "AutoScalingGroupName" = aws_autoscaling_group.ecs_asg.name
+  }
+  actions_enabled = true
+  alarm_actions   = [aws_autoscaling_policy.scale_up.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "constant_cpu_60_percent_up_alarm" {
+  alarm_name          = "constant_cpu_60_percent_up_alarm"
+  alarm_description   = "asg-scale-up-cpu-alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "20"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "1200"
+  statistic           = "Average"
+  threshold           = "60" # New instance will be created once CPU utilization is higher than 30 %
+  dimensions = {
+    "AutoScalingGroupName" = aws_autoscaling_group.ecs_asg.name
+  }
+  actions_enabled = true
+  alarm_actions   = [aws_autoscaling_policy.scale_up.arn]
+}
+
+# scale down policy
+resource "aws_autoscaling_policy" "scale_down" {
+  name                   = "asg-scale-down"
+  autoscaling_group_name = aws_autoscaling_group.ecs_asg.name
+  adjustment_type        = "ChangeInCapacity"
+  scaling_adjustment     = "-1" # decreasing instance by 1 
+  cooldown               = "300"
+  policy_type            = "SimpleScaling"
+}
+
+# scale down alarm
+resource "aws_cloudwatch_metric_alarm" "scale_down_alarm" {
+  alarm_name          = "asg-scale-down-alarm"
+  alarm_description   = "asg-scale-down-cpu-alarm"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods  = "20"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "1200"
+  statistic           = "Average"
+  threshold           = "40" # Instance will scale down when CPU utilization is lower than 5 %
+  dimensions = {
+    "AutoScalingGroupName" = aws_autoscaling_group.ecs_asg.name
+  }
+  actions_enabled = true
+  alarm_actions   = [aws_autoscaling_policy.scale_down.arn]
+}
+
