@@ -1,5 +1,13 @@
-resource "aws_ecr_repository" "nginx" {
-    name  = "nginx"
+resource "aws_ecr_repository" "db-migration" {
+    name  = "db-migration"
+}
+
+resource "aws_ecr_repository" "frontend" {
+    name  = "frontend"
+}
+
+resource "aws_ecr_repository" "backend" {
+    name  = "backend"
 }
 
 resource "aws_ecs_cluster" "ecs_cluster" {
@@ -7,7 +15,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 }
 
 resource "aws_launch_configuration" "ecs_launch_config" {
-    image_id             = "ami-054c337ee5048c313" # Amazon Linux
+    image_id             = "ami-054c337ee5048c313" # Amazon Linux with ECS compitable
     iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
     security_groups      = [aws_security_group.ecs_sg.id]
     user_data            = "#!/bin/bash \n echo ECS_CLUSTER=my-cluster >> /etc/ecs/ecs.config"
@@ -79,7 +87,7 @@ resource "aws_cloudwatch_metric_alarm" "scale_up_alarm" {
   evaluation_periods  = "5"
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "300"
+  period              = "60"
   statistic           = "Average"
   threshold           = "60" # New instance will be created once CPU utilization is higher than 30 %
   dimensions = {
@@ -96,7 +104,7 @@ resource "aws_cloudwatch_metric_alarm" "constant_cpu_60_percent_up_alarm" {
   evaluation_periods  = "20"
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "1200"
+  period              = "60"
   statistic           = "Average"
   threshold           = "60" # New instance will be created once CPU utilization is higher than 30 %
   dimensions = {
@@ -124,7 +132,7 @@ resource "aws_cloudwatch_metric_alarm" "scale_down_alarm" {
   evaluation_periods  = "20"
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "1200"
+  period              = "60"
   statistic           = "Average"
   threshold           = "40" # Instance will scale down when CPU utilization is lower than 5 %
   dimensions = {
