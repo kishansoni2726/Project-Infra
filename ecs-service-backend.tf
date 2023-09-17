@@ -1,8 +1,8 @@
 
 resource "aws_ecs_task_definition" "backend_task_definition" {
-  family                   = "backend"
-  requires_compatibilities = ["EC2"]
-  container_definitions = jsonencode([
+  family                                = "backend"
+  requires_compatibilities              = ["EC2"]
+  container_definitions                 = jsonencode([
     {
       "name"  : "backend-container",
       "image" : "backend:latest",
@@ -20,10 +20,9 @@ resource "aws_ecs_task_definition" "backend_task_definition" {
 }
 
 resource "aws_ecs_service" "backend" {
-  name            = "backend"
-  cluster         = aws_ecs_cluster.ecs_cluster.id
-  task_definition = aws_ecs_task_definition.backend_task_definition.arn
-  desired_count   = 1
-  
+    name                            = "backend"
+    cluster                         = aws_ecs_cluster.ecs_cluster.id
+    task_definition                 = aws_ecs_task_definition.backend_task_definition.arn
+    desired_count                   = 1  
 }
 

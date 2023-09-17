@@ -15,7 +15,6 @@ resource "aws_ecs_task_definition" "frontend_task_definition" {
       "memory"         : 512,  # Specify the memory in MiB
       "memoryReservation": 256 
     },
-    // You can define additional containers here if needed
   ])
 }
 

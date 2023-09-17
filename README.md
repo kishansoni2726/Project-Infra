@@ -34,7 +34,23 @@ To Deploy this Infra please Follow below mentioned steps:
     
     1). Clone this Repo
 
-    2). create two files in this directory:
+    2). create one S3 bucket 
+
+    3). make sure Access key you are using have access for that bucket
+
+    4). specify your bucket name in providers.tf file in terraform -> backend block
+
+        example:
+                terraform {
+                  backend "s3" {
+                    bucket         = "your_bucket_name"
+                    key            = "path/terraform.tfstate"
+                    region         = "region of bucket"
+                    encrypt        = true
+                  }
+                }
+
+        4). create two files in this directory:
         
             1). secret_username.json
 
@@ -52,15 +68,15 @@ To Deploy this Infra please Follow below mentioned steps:
                 +    }                                            +
                 +-------------------------------------------------+
     
-    3). Make sure you have terraform installed
+    5). Make sure you have terraform installed
 
-    4). Run below mentioned command
+    6). Run below mentioned command
 
             terraform init
             terraform plan
             terraform apply --auto-approve
 
-    5). To destroy infra
+    7). To destroy infra
             
             1). Delete images from ECR
             2). terraform destroy --auto-approve 

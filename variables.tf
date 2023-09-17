@@ -1,9 +1,15 @@
 variable "project" {
     type        = string
-    description = "Project Title"
-    default     = "Bookstore"
+    description = "Project Title (yesmust use lowercase letters)"
+    default     = "bookstore"
 }
 
+
+variable "region" {
+    type        = string
+    description = "Default Region for Project"
+    default     = "ap-south-1"
+}
 variable "vpc_cidr" {
     type        = string
     description = "Project Title"
@@ -82,3 +88,5 @@ variable "db_instance_class" {
     description = "Instance Type"
     default     = "db.t3.micro"
 }
+
+

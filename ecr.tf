@@ -1,11 +1,11 @@
 resource "aws_ecr_repository" "db-migration" {
-    name  = "${var.project}-db-migration"
+    name  = "db-migration"
 }
 
 resource "aws_ecr_repository" "frontend" {
-    name  = "${var.project}-frontend"
+    name  = "frontend"
 }
 
 resource "aws_ecr_repository" "backend" {
-    name  = "${var.project}-backend"
+    name  = "backend"
 }

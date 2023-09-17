@@ -9,3 +9,4 @@ output "EIP" {
 # output "secret_arn" {
 #   value = aws_secretsmanager_secret.database_secret.arn
 # }
+
